@@ -74,7 +74,7 @@ public class Tokenizer {
                         getCached().map(x -> x.filter(y -> y.originalText().equals(input))).right().get().size()));
                 break;
             default:
-                // The default should never be reached.  Just in case, it's set to the same output as StringMatch
+                // The default should never be reached.  Just in case, it's set to an empty Optional
                 result = Optional.empty();
         }
         return result;

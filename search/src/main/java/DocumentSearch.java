@@ -24,7 +24,9 @@ class DocumentSearch {
                 .breadthFirst(new File(directory))
                 .iterator();
 
-        // Todo: Explain how consuming the iterator can affect performance with large quantities of files, and how it can reach the limit on file handles
+        // There is a potential to exhaust all open file handles on a system here
+        // If there is any chance of that happening, it is better to use the file iterator instead of turning it
+        // into a list.  For the purposes of this case study, this should be sufficient.
         List<File> files = List.ofAll(Lists.newArrayList(fileIterator))
                 .filter(File::isFile)
                 .filter(x -> x.getName().endsWith(".txt"));
