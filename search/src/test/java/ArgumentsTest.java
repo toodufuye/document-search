@@ -21,7 +21,7 @@ public class ArgumentsTest {
     public void setUp() {
         retryPolicy = new RetryPolicy()
                 .retryOn(NumberFormatException.class)
-                .withDelay(1, TimeUnit.SECONDS)
+                .withDelay(1, TimeUnit.MILLISECONDS)
                 .withMaxRetries(1);
     }
 

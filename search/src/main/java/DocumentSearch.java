@@ -40,9 +40,10 @@ class DocumentSearch {
                 return "Please provide a valid search method";
             } else {
                 Long startTime = System.currentTimeMillis();
-                // this can be parallel mapped for speed improvements given a large enough list of files
+                // this can be parallel mapped for speed improvements given a large enough list of files and the processing cores to support it
                 return files.map(Tokenizer::new)
-                        .map(x -> x.searchTokens(arguments._1, arguments._2.get()))
+                        .map(x -> x.searchTokens(arguments._1, arguments._2.get())) // the second tuple argument will be present in this else case.
+                        .map(Optional::get)
                         .sortBy(SearchResult::getOccurrences)
                         .reverse()
                         .map(x -> String.format("%s - %s matches", x.getFileName(), x.getOccurrences()))
@@ -50,7 +51,7 @@ class DocumentSearch {
                         .concat(String.format("\nElasped time: %s", System.currentTimeMillis() - startTime));
             }
         } else {
-            return String.format("There are no text files in the directory %s", directory);
+            return String.format("There are no text files in the directory %s or the directory does not exist", directory);
         }
     }
 }

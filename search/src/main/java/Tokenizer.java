@@ -15,6 +15,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.charset.Charset;
+import java.util.Optional;
 
 import static io.vavr.API.Left;
 import static io.vavr.API.Right;
@@ -51,23 +52,30 @@ public class Tokenizer {
     }
 
     // Todo: Handle the case of a Left return from getTokens
-    SearchResult searchTokens(String input, Arguments.Method method) {
-        SearchResult result;
+    /**
+     *
+     * @param input search string
+     * @param method search method
+     * @return an Optional search result.  The default case requires a value even if it will never be hit
+     * This forces me to set the result and an empty optional fits here.
+     */
+    Optional<SearchResult> searchTokens(String input, Arguments.Method method) {
+        Optional<SearchResult> result;
         switch (method) {
             case StringMatch:
-                result = new SearchResult(file.getAbsolutePath(),
-                        getCached().map(x -> x.filter(y -> y.originalText().equals(input))).right().get().size());
+                result = Optional.of(new SearchResult(file.getAbsolutePath(),
+                        getCached().map(x -> x.filter(y -> y.originalText().equals(input))).right().get().size()));
                 break;
             case RegexMatch:
-                result = new SearchResult(file.getAbsolutePath(), regexMatch(getCached(), input).size());
+                result = Optional.of(new SearchResult(file.getAbsolutePath(), regexMatch(getCached(), input).size()));
                 break;
             case Indexed: // Todo: make this an actual database call
-                result = new SearchResult(file.getAbsolutePath(),
-                        getCached().map(x -> x.filter(y -> y.originalText().equals(input))).right().get().size());
+                result = Optional.of(new SearchResult(file.getAbsolutePath(),
+                        getCached().map(x -> x.filter(y -> y.originalText().equals(input))).right().get().size()));
                 break;
             default:
-                result = new SearchResult(file.getAbsolutePath(),
-                        getCached().map(x -> x.filter(y -> y.originalText().equals(input))).right().get().size());
+                // The default should never be reached.  Just in case, it's set to the same output as StringMatch
+                result = Optional.empty();
         }
         return result;
     }

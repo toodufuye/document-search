@@ -42,7 +42,7 @@ class Arguments {
     }
 
     static Tuple2<String, Optional<Method>> getSearchMethod(InputStream in, PrintStream out, RetryPolicy retryPolicy) {
-        String input;
+        String input = "";
         Optional<Method> method;
         try (BufferedReader br = new BufferedReader(new InputStreamReader(in))) {
             input = Failsafe.with(retryPolicy.retryWhen(""))
@@ -52,7 +52,7 @@ class Arguments {
                         return br.readLine();
                     });
 
-            method = Failsafe.with(retryPolicy)
+            method = Failsafe.with(retryPolicy.retryWhen(null).retryOn(NumberFormatException.class))
                     .onFailedAttempt(failure -> out.println(String.format("Error %s. Please try again",
                             failure)))
                     .get(() -> {
@@ -61,13 +61,11 @@ class Arguments {
                     });
         } catch (IOException io) {
             logger.error("Error occurred while reading input from the console", io);
-            input = "";
             method = Optional.empty();
         } catch (NumberFormatException ne) {
-            input = "";
+            logger.error("Error occurred while formatting number", ne);
             method = Optional.empty();
         }
-
         return Tuple.of(input, method);
     }
 }
