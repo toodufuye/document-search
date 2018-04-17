@@ -5,11 +5,8 @@ import net.jodah.failsafe.RetryPolicy;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
 class Arguments {
     private static final Logger logger = LogManager.getLogger(Arguments.class);
@@ -44,29 +41,22 @@ class Arguments {
         }
     }
 
-    static Tuple2<String, Optional<Method>> getSearchMethod() {
+    static Tuple2<String, Optional<Method>> getSearchMethod(InputStream in, PrintStream out, RetryPolicy retryPolicy) {
         String input;
         Optional<Method> method;
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(System.in))) {
-
-
-            RetryPolicy retryPolicy = new RetryPolicy()
-                    .retryOn(NumberFormatException.class)
-                    .withDelay(1, TimeUnit.SECONDS)
-                    .withMaxRetries(3);
-
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(in))) {
             input = Failsafe.with(retryPolicy.retryWhen(""))
-                    .onFailedAttempt(failure -> System.out.println("Please enter a non empty string"))
+                    .onFailedAttempt(failure -> out.println("Please enter a non empty string"))
                     .get(() -> {
-                        System.out.print("Enter the search term: ");
+                        out.print("Enter the search term: ");
                         return br.readLine();
                     });
 
             method = Failsafe.with(retryPolicy)
-                    .onFailedAttempt(failure -> System.out.println(String.format("Error %s. Please try again",
+                    .onFailedAttempt(failure -> out.println(String.format("Error %s. Please try again",
                             failure)))
                     .get(() -> {
-                        System.out.print("Search Method: 1) String Match, 2) Regular Expression, 3) Indexed ");
+                        out.print("Search Method: 1) String Match, 2) Regular Expression, 3) Indexed ");
                         return Method.getEndpoint(Integer.parseInt(br.readLine()));
                     });
         } catch (IOException io) {
