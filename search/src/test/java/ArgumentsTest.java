@@ -1,23 +1,17 @@
 import lombok.val;
 import net.jodah.failsafe.RetryPolicy;
-
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.*;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.spy;
 
 
 public class ArgumentsTest {
@@ -79,9 +73,7 @@ public class ArgumentsTest {
 
     @Test
     public void getSearchIOException () throws IOException {
-        InputStream is = new ByteArrayInputStream("the\n1".getBytes(StandardCharsets.UTF_8));
         InputStream mockInputStream = spy(new ByteArrayInputStream("the\n3".getBytes(StandardCharsets.UTF_8)));
-        RetryPolicy mockRetry = mock(RetryPolicy.class);
         doThrow(new IOException()).when(mockInputStream).close();
         val result = Arguments.getSearchMethod(mockInputStream, System.out, retryPolicy);
         assertFalse(result._2.isPresent());

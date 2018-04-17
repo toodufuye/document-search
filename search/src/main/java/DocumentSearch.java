@@ -39,12 +39,15 @@ class DocumentSearch {
             } else if (!arguments._2.isPresent()) {
                 return "Please provide a valid search method";
             } else {
-                // Success case
-                    return files.map(Tokenizer::new)
+                Long startTime = System.currentTimeMillis();
+                // this can be parallel mapped for speed improvements given a large enough list of files
+                return files.map(Tokenizer::new)
                         .map(x -> x.searchTokens(arguments._1, arguments._2.get()))
                         .sortBy(SearchResult::getOccurrences)
                         .reverse()
-                        .map(x -> String.format("%s - %s matches", x.getFileName(), x.getOccurrences())).mkString("\n");
+                        .map(x -> String.format("%s - %s matches", x.getFileName(), x.getOccurrences()))
+                        .mkString("\n")
+                        .concat(String.format("\nElasped time: %s", System.currentTimeMillis() - startTime));
             }
         } else {
             return String.format("There are no text files in the directory %s", directory);

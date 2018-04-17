@@ -61,7 +61,7 @@ public class Tokenizer {
             case RegexMatch:
                 result = new SearchResult(file.getAbsolutePath(), regexMatch(getCached(), input).size());
                 break;
-            case Indexed:
+            case Indexed: // Todo: make this an actual database call
                 result = new SearchResult(file.getAbsolutePath(),
                         getCached().map(x -> x.filter(y -> y.originalText().equals(input))).right().get().size());
                 break;
