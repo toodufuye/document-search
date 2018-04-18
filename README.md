@@ -10,13 +10,13 @@ Search for words (tokens) in text files
 ## How to Run
 - Run the command ``` java -jar <full path to jar> <full path to unzipped folder with txt files> ```
 - You'll be prompted to enter a search term.  The search term can be one of the following
-  - A string with no quotes.  For example: ```the```
-  - A simple regex.  For example: ```/the|and/``` will search for both the tokens ```the``` and ```and```
-  - A compound token pattern.  For example ```[ !{ tag:/VB.*/ } ]``` will search for all tokens that are not verbs.  [ Documentation](https://nlp.stanford.edu/software/tokensregex.html)
+  1. A string with no quotes.  For example: ```the```
+  2. A simple regex.  For example: ```/the|and/``` will search for both the tokens ```the``` and ```and```
+  3. A compound token pattern.  For example ```[ !{ tag:/VB.*/ } ]``` will search for all tokens that are not verbs.  [ Documentation](https://nlp.stanford.edu/software/tokensregex.html)
 - You'll be prompted to choose a search method.  Your choices are
-  - String (basic string matching)
-  - Regex (Necessary if your search term is a regex)
-  - Indexed (The tokens are first indexed in an H2 database before being queried)
+  1.  String (basic string matching)
+  2.  Regex (Necessary if your search term is a regex)
+  3.  Indexed (The tokens are first indexed in an H2 database before being queried)
 
 ## Code Coverage Report
 - First run ```./mvnw clean test``` then open the file search/target/site/jacoco/index.html in your browser of choice
