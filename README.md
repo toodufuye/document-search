@@ -26,6 +26,27 @@ Search for words (tokens) in text files
 
 ## Performance Testing
 - To run performance tests, execute the following ```./mvnw -Dtest=TokenizerTest#performanceTest -DargLine="-Dsystem.performance.test=true" test```
+- My last run returned the following result:
+
+    ```
+    \-------------------------------------------------------
+     T E S T S
+    \-------------------------------------------------------
+    Running TokenizerTest
+    SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
+    SLF4J: Defaulting to no-operation (NOP) logger implementation
+    SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
+
+    <----------------  Performance Testing Results ---------------->
+    2,000,000 million searches with the String method took:    31,864 ms
+    2,000,000 million searches with the Regex method took:  2,578,589 ms
+    2,000,000 million searches with the Indexed method took:  28,5614 ms
+    Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2,897.342 sec
+
+    Results :
+
+    Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+    ```
 
 ## Scaling considerations
 - Change from using H2 as a database to either a relational database, or a NOSQL database like DynamoDb.

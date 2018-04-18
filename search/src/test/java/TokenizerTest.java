@@ -1,6 +1,7 @@
 import com.google.common.io.Resources;
 import db.WordDao;
 import edu.stanford.nlp.ling.CoreLabel;
+import io.vavr.Function1;
 import io.vavr.collection.List;
 import io.vavr.control.Either;
 import models.SearchResult;
@@ -11,6 +12,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
+import java.util.Random;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -75,13 +77,32 @@ public class TokenizerTest {
     @Test
     public void performanceTest() {
         Assume.assumeTrue("true".equals(System.getProperty("system.performance.test")));
-        List<String> words = List.of("France", "the", "and", "Hitchhiker", "XIV", "2004", "Improbability",
-                "faster-than-light", "a", "regime", "in", "I", "drive", "for", "often", "is", "has");
-        // setup the database
 
-        int count = 0;
-        while (++count < 2000000) {
+        // Database setup
+        List<File> testFiles = List.of(
+                new File(Resources.getResource("sample_files/sample_text/warp_drive.txt").getPath()),
+                new File(Resources.getResource("sample_files/sample_text/hitchhikers.txt").getPath()),
+                new File(Resources.getResource("sample_files/sample_text/french_armed_forces.txt").getPath())
+        );
+        List<Tokenizer> tokenizers = testFiles.map(x -> Tokenizer.builder().file(x).jdbi(jdbi).build());
+        H2Utils.insertWordsIntoDatabase(jdbi, testFiles);
 
-        }
+        Function1<Arguments.Method, Long> runPerformanceTest = (method) -> {
+            // Todo: test for word "faster-than-light"
+            List<String> words = List.of("France", "the", "and", "Hitchhiker", "XIV", "2004", "Improbability",
+                    "a", "regime", "in", "I", "drive", "for", "often", "is", "has");
+            Random random = new Random();
+            int count = 0;
+            Long startTime = System.currentTimeMillis();
+            while (++count < 2000000) {
+                tokenizers.forEach(x -> x.searchTokens(words.get(random.nextInt(words.size())), method));
+            }
+            return System.currentTimeMillis() - startTime;
+        };
+
+        System.out.println("\n<----------------  Performance Testing Results ---------------->");
+        System.out.println(String.format("2,000,000 million searches with the String method took: %s ms", runPerformanceTest.apply(Arguments.Method.StringMatch)));
+        System.out.println(String.format("2,000,000 million searches with the Regex method took: %s ms", runPerformanceTest.apply(Arguments.Method.RegexMatch)));
+        System.out.println(String.format("2,000,000 million searches with the Indexed method took: %s ms", runPerformanceTest.apply(Arguments.Method.Indexed)));
     }
 }
