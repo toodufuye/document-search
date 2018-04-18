@@ -61,7 +61,7 @@ The clear winner in my test is the String method.  Turning off caching of the fi
 - Change from using H2 as a database to either a relational database, or a NOSQL database like DynamoDb.
 - Separate the Loading of data into the database into its own separate and scalable process.
 - Consider removing the ability to read from the filesystem directly.  If the filesystem is necessary, consider a distributed batch processing cluster like Apache Spark / HDFS.
-- Add an api and an api (ex: nginx) in front of the application.  Allow input to be given in a better way than the console.
+- Add an api (ex: nginx) in front of the application.  Allow input to be given in a better way than the console.
 - The reading of files and processing of tokens is a highly parallelizable operation.  Take advantage of parallelism & concurrency to process large amounts of files.
 
 ## Library credits
