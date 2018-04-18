@@ -48,6 +48,10 @@ Search for words (tokens) in text files
 
     Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
     ```
+- The fastest approach is the Indexed route with a database.  This is not surprising since pre-computing an index allows for fast lookups.
+The string method is also not far behind only because I cache the results of tokenizing the file.  Without caching those results, the filesystem
+would be hit on every search; causing a massive performance hit.
+The surprising result to me is how long the Regex method took. Even with the caching of the tokens, the Regex method was 80 times as slow as the String method.
 
 ## Scaling considerations
 - Change from using H2 as a database to either a relational database, or a NOSQL database like DynamoDb.
