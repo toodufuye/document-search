@@ -72,7 +72,7 @@ class Tokenizer {
             case RegexMatch:
                 result = Optional.of(new SearchResult(file.getAbsolutePath(), regexMatch(getCached(), input).size()));
                 break;
-            case Indexed: // Todo: make this an actual database call
+            case Indexed:
                 result = Optional.of(new SearchResult(
                         file.getAbsolutePath(),
                         jdbi.withExtension(WordDao.class, dao -> dao.countOccurences(input, file.getAbsolutePath())))
