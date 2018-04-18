@@ -1,10 +1,7 @@
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
-import db.WordDao;
-import edu.stanford.nlp.ling.CoreLabel;
 import io.vavr.Tuple2;
 import io.vavr.collection.List;
-import io.vavr.control.Either;
 import lombok.Builder;
 import models.SearchResult;
 import net.jodah.failsafe.RetryPolicy;

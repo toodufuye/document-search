@@ -72,7 +72,7 @@ public class ArgumentsTest {
     }
 
     @Test
-    public void getSearchIOException () throws IOException {
+    public void getSearchIOException() throws IOException {
         InputStream mockInputStream = spy(new ByteArrayInputStream("the\n3".getBytes(StandardCharsets.UTF_8)));
         doThrow(new IOException()).when(mockInputStream).close();
         val result = Arguments.getSearchMethod(mockInputStream, System.out, retryPolicy);

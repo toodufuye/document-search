@@ -32,13 +32,16 @@ class Tokenizer {
     private final Jdbi jdbi;
 
     // this value is cached automatically by lombok
-    @Getter(lazy=true) private final Either<Exception, List<CoreLabel>> cached = getTokens();
+    @Getter(lazy = true)
+    private final Either<Exception, List<CoreLabel>> cached = getTokens();
 
     private Either<Exception, List<CoreLabel>> getTokens() {
         try (Reader reader = Files.asCharSource(this.file, Charset.defaultCharset()).openStream()) {
             return Right(List.ofAll(new PTBTokenizer<>(reader, new CoreLabelTokenFactory(), "").tokenize()));
         } catch (IOException io) {
-            // This branch is very difficult to hit in tests, even via mocks.
+            // This branch is very difficult to hit in tests, even via mocks.  The reason is that the InputStream
+            // is created within getTokens.  Moving the input stream creation outside of this class would help
+            // with dependency injection during testing, but isn't necessarily a better solution.
             logger.error("Error occurred while reading file: ", io);
             return Left(io);
         }
@@ -56,8 +59,7 @@ class Tokenizer {
     }
 
     /**
-     *
-     * @param input search string
+     * @param input  search string
      * @param method search method
      * @return an Optional search result.  The default case requires a value even if it will never be hit
      * This forces me to set the result and an empty optional fits here.
