@@ -20,6 +20,7 @@ Search for words (tokens) in text files
 
 ## Code Coverage Report
 - First run ```./mvnw clean test``` then open the file search/target/site/jacoco/index.html in your browser of choice
+![Image of code coverage](https://github.com/toodufuye/document-search/images/code_coverage.png)
 
 ## Assumptions
 - Text files that you want to be analyzed end in a ```.txt``` extension
