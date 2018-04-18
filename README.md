@@ -52,6 +52,7 @@ Search for words (tokens) in text files
 The string method is also not far behind only because I cache the results of tokenizing the file.  Without caching those results, the filesystem
 would be hit on every search; causing a massive performance hit.
 The surprising result to me is how long the Regex method took. Even with the caching of the tokens, the Regex method was 80 times as slow as the String method.
+
 **Edit**
 I noticed after the fact that I have a comma in the wrong position on the performance test result for the Indexed method.
 Surprisingly, it actually took longer than the String method.  This changes everything about how I would actually scale an application to do this work.  I also wonder how well it would perform if I switch from using an in memory database, or if a different database table schema/indexes might help with tweaking performance.
