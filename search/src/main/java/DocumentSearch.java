@@ -2,13 +2,14 @@ import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 import db.WordDao;
 import edu.stanford.nlp.ling.CoreLabel;
-import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.collection.List;
 import io.vavr.control.Either;
 import lombok.Builder;
 import models.SearchResult;
 import net.jodah.failsafe.RetryPolicy;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jdbi.v3.core.Jdbi;
 
 import java.io.File;
@@ -19,6 +20,7 @@ import java.util.Optional;
 
 @Builder
 class DocumentSearch {
+    private static final Logger logger = LogManager.getLogger(DocumentSearch.class);
     private RetryPolicy retryPolicy;
     private String directory;
     private InputStream in;
@@ -68,11 +70,21 @@ class DocumentSearch {
         jdbi.useExtension(WordDao.class, dao -> {
             dao.createTable();
             dao.createIndex();
-            files.map(x -> Tuple.of(x.getAbsolutePath(), Tokenizer.builder().file(x).jdbi(jdbi).build()))
-                .map((Tuple2<String, Tokenizer> x) -> Tuple.of(x._1, x._2.getCached()))
-                .filter((Tuple2<String, Either<Exception, List<CoreLabel>>> x) -> x._2.isRight())
-                .map((Tuple2<String, Either<Exception, List<CoreLabel>>> x) -> Tuple.of(x._1, x._2.right().get()))
-                .forEach((Tuple2<String, List<CoreLabel>> x) -> x._2.forEach(y -> dao.insert(y.originalText(), x._1)));
+            files.forEach(file -> {
+                Either<Exception, List<CoreLabel>> tokens = Tokenizer.builder()
+                        .file(file)
+                        .jdbi(jdbi)
+                        .build()
+                        .getCached();
+                // Either projections only get executed if the projection matches the actual value.
+                tokens.right()
+                        .forEach((List<CoreLabel> y) -> y.forEach((CoreLabel z) -> dao.insert(
+                                z.originalText(),
+                                file.getAbsolutePath())));
+                tokens.left()
+                        .forEach(x -> logger.error(
+                                "Error occurred while retrieving tokens.  Cannot add tokens to the database", x));
+            });
         });
     }
 }

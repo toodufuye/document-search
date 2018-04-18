@@ -37,7 +37,8 @@ class Tokenizer {
     private Either<Exception, List<CoreLabel>> getTokens() {
         try (Reader reader = Files.asCharSource(this.file, Charset.defaultCharset()).openStream()) {
             return Right(List.ofAll(new PTBTokenizer<>(reader, new CoreLabelTokenFactory(), "").tokenize()));
-        } catch (IOException io){
+        } catch (IOException io) {
+            // This branch is very difficult to hit in tests, even via mocks.
             logger.error("Error occurred while reading file: ", io);
             return Left(io);
         }
@@ -54,7 +55,6 @@ class Tokenizer {
         return result;
     }
 
-    // Todo: Handle the case of a Left return from getTokens
     /**
      *
      * @param input search string
@@ -75,8 +75,9 @@ class Tokenizer {
             case Indexed:
                 result = Optional.of(new SearchResult(
                         file.getAbsolutePath(),
-                        jdbi.withExtension(WordDao.class, dao -> dao.countOccurences(input, file.getAbsolutePath())))
-                );
+                        jdbi.withExtension(
+                                WordDao.class,
+                                dao -> dao.countOccurences(input, file.getAbsolutePath()))));
                 break;
             default:
                 // The default should never be reached.  Just in case, it's set to an empty Optional

@@ -18,6 +18,9 @@ Search for words (tokens) in text files
   - Regex (Necessary if your search term is a regex)
   - Indexed (The tokens are first indexed in an H2 database before being queried)
 
+## Code Coverage Report
+- First run ```./mvnw clean test``` then open the file search/target/site/jacoco/index.html in your browser of choice
+
 ## Assumptions
 - Text files that you want to be analyzed end in a ```.txt``` extension
 
