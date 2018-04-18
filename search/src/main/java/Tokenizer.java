@@ -1,15 +1,19 @@
 import com.google.common.io.Files;
+import db.WordDao;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.ling.tokensregex.TokenSequenceMatcher;
+import edu.stanford.nlp.ling.tokensregex.TokenSequencePattern;
 import edu.stanford.nlp.process.CoreLabelTokenFactory;
 import edu.stanford.nlp.process.PTBTokenizer;
-import edu.stanford.nlp.ling.tokensregex.TokenSequencePattern;
 import edu.stanford.nlp.util.CoreMap;
 import io.vavr.collection.List;
 import io.vavr.control.Either;
+import lombok.Builder;
 import lombok.Getter;
+import models.SearchResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jdbi.v3.core.Jdbi;
 
 import java.io.File;
 import java.io.IOException;
@@ -20,16 +24,15 @@ import java.util.Optional;
 import static io.vavr.API.Left;
 import static io.vavr.API.Right;
 
-
-public class Tokenizer {
+@Builder
+class Tokenizer {
     private static final Logger logger = LogManager.getLogger(Tokenizer.class);
 
     private File file;
-    @Getter(lazy=true) private final Either<Exception, List<CoreLabel>> cached = getTokens();
+    private final Jdbi jdbi;
 
-    Tokenizer(File file) {
-        this.file = file;
-    }
+    // this value is cached automatically by lombok
+    @Getter(lazy=true) private final Either<Exception, List<CoreLabel>> cached = getTokens();
 
     private Either<Exception, List<CoreLabel>> getTokens() {
         try (Reader reader = Files.asCharSource(this.file, Charset.defaultCharset()).openStream()) {
@@ -70,8 +73,10 @@ public class Tokenizer {
                 result = Optional.of(new SearchResult(file.getAbsolutePath(), regexMatch(getCached(), input).size()));
                 break;
             case Indexed: // Todo: make this an actual database call
-                result = Optional.of(new SearchResult(file.getAbsolutePath(),
-                        getCached().map(x -> x.filter(y -> y.originalText().equals(input))).right().get().size()));
+                result = Optional.of(new SearchResult(
+                        file.getAbsolutePath(),
+                        jdbi.withExtension(WordDao.class, dao -> dao.countOccurences(input, file.getAbsolutePath())))
+                );
                 break;
             default:
                 // The default should never be reached.  Just in case, it's set to an empty Optional

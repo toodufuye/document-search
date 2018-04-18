@@ -1,10 +1,15 @@
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
+import db.WordDao;
+import edu.stanford.nlp.ling.CoreLabel;
+import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.collection.List;
+import io.vavr.control.Either;
 import lombok.Builder;
+import models.SearchResult;
 import net.jodah.failsafe.RetryPolicy;
-
+import org.jdbi.v3.core.Jdbi;
 
 import java.io.File;
 import java.io.InputStream;
@@ -18,6 +23,7 @@ class DocumentSearch {
     private String directory;
     private InputStream in;
     private PrintStream out;
+    private Jdbi jdbi;
 
     String Search() {
         Iterator<File> fileIterator = Files.fileTraverser()
@@ -31,6 +37,7 @@ class DocumentSearch {
                 .filter(File::isFile)
                 .filter(x -> x.getName().endsWith(".txt"));
 
+        insertWordsIntoDatabase(files);
         if (!files.isEmpty()) {
             Tuple2<String, Optional<Arguments.Method>> arguments = Arguments.getSearchMethod(
                     in,
@@ -43,17 +50,29 @@ class DocumentSearch {
             } else {
                 Long startTime = System.currentTimeMillis();
                 // this can be parallel mapped for speed improvements given a large enough list of files and the processing cores to support it
-                return files.map(Tokenizer::new)
+                return files.map(x -> Tokenizer.builder().file(x).jdbi(jdbi).build())
                         .map(x -> x.searchTokens(arguments._1, arguments._2.get())) // the second tuple argument will be present in this else case.
                         .map(Optional::get)
                         .sortBy(SearchResult::getOccurrences)
                         .reverse()
                         .map(x -> String.format("%s - %s matches", x.getFileName(), x.getOccurrences()))
                         .mkString("\n")
-                        .concat(String.format("\nElasped time: %s", System.currentTimeMillis() - startTime));
+                        .concat(String.format("\nElasped time: %s ms", System.currentTimeMillis() - startTime));
             }
         } else {
             return String.format("There are no text files in the directory %s or the directory does not exist", directory);
         }
+    }
+
+    private void insertWordsIntoDatabase(List<File> files) {
+        jdbi.useExtension(WordDao.class, dao -> {
+            dao.createTable();
+            dao.createIndex();
+            files.map(x -> Tuple.of(x.getAbsolutePath(), Tokenizer.builder().file(x).jdbi(jdbi).build()))
+                .map((Tuple2<String, Tokenizer> x) -> Tuple.of(x._1, x._2.getCached()))
+                .filter((Tuple2<String, Either<Exception, List<CoreLabel>>> x) -> x._2.isRight())
+                .map((Tuple2<String, Either<Exception, List<CoreLabel>>> x) -> Tuple.of(x._1, x._2.right().get()))
+                .forEach((Tuple2<String, List<CoreLabel>> x) -> x._2.forEach(y -> dao.insert(y.originalText(), x._1)));
+        });
     }
 }
