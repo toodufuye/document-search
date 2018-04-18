@@ -76,6 +76,7 @@ public class TokenizerTest {
 
     @Test
     public void performanceTest() {
+        // This test is only run if the following assumption passes.
         Assume.assumeTrue("true".equals(System.getProperty("system.performance.test")));
 
         // Database setup
