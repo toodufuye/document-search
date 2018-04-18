@@ -24,6 +24,9 @@ Search for words (tokens) in text files
 ## Assumptions
 - Text files that you want to be analyzed end in a ```.txt``` extension
 
+## Performance Testing
+- To run performance tests, execute the following ```./mvnw -Dtest=TokenizerTest#performanceTest -DargLine="-Dsystem.performance.test=true" test```
+
 ## Scaling considerations
 - Change from using H2 as a database to either a relational database, or a NOSQL database like DynamoDb.
 - Separate the Loading of data into the database into its own separate and scalable process.

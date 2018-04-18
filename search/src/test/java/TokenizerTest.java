@@ -6,6 +6,7 @@ import io.vavr.control.Either;
 import models.SearchResult;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.sqlobject.SqlObjectPlugin;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -69,5 +70,18 @@ public class TokenizerTest {
         Either<Exception, List<CoreLabel>> second = tokenizer.getCached();
         verify(spyFile, times(1)).getPath();
         assertEquals(first, second);
+    }
+
+    @Test
+    public void performanceTest() {
+        Assume.assumeTrue("true".equals(System.getProperty("system.performance.test")));
+        List<String> words = List.of("France", "the", "and", "Hitchhiker", "XIV", "2004", "Improbability",
+                "faster-than-light", "a", "regime", "in", "I", "drive", "for", "often", "is", "has");
+        // setup the database
+
+        int count = 0;
+        while (++count < 2000000) {
+
+        }
     }
 }

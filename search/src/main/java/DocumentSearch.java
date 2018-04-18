@@ -39,7 +39,7 @@ class DocumentSearch {
                 .filter(File::isFile)
                 .filter(x -> x.getName().endsWith(".txt"));
 
-        insertWordsIntoDatabase(files);
+        H2Utils.insertWordsIntoDatabase(jdbi, files);
         if (!files.isEmpty()) {
             Tuple2<String, Optional<Arguments.Method>> arguments = Arguments.getSearchMethod(
                     in,
@@ -64,27 +64,5 @@ class DocumentSearch {
         } else {
             return String.format("There are no text files in the directory %s or the directory does not exist", directory);
         }
-    }
-
-    private void insertWordsIntoDatabase(List<File> files) {
-        jdbi.useExtension(WordDao.class, dao -> {
-            dao.createTable();
-            dao.createIndex();
-            files.forEach(file -> {
-                Either<Exception, List<CoreLabel>> tokens = Tokenizer.builder()
-                        .file(file)
-                        .jdbi(jdbi)
-                        .build()
-                        .getCached();
-                // Either projections only get executed if the projection matches the actual value.
-                tokens.right()
-                        .forEach((List<CoreLabel> y) -> y.forEach((CoreLabel z) -> dao.insert(
-                                z.originalText(),
-                                file.getAbsolutePath())));
-                tokens.left()
-                        .forEach(x -> logger.error(
-                                "Error occurred while retrieving tokens.  Cannot add tokens to the database", x));
-            });
-        });
     }
 }
