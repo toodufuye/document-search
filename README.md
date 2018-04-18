@@ -7,6 +7,11 @@ Search for words (tokens) in text files
 ## How to Build
 - While in the search directory, run the command ``` ./mvnw clean install ``` 
 
+## How to Run
+- Run the command ``` java -jar <full path to jar> <full path to unzipped folder with txt files> ```
+
+## Assumptions
+- Text files that you want to be analyzed end in a ```.txt``` extension
 
 
 ## Library credits
