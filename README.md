@@ -26,7 +26,7 @@ Search for words (tokens) in text files
 - Text files that you want to be analyzed end in a ```.txt``` extension
 
 ## Performance Testing
-- To run performance tests, execute the following ```./mvnw -Dtest=TokenizerTest#performanceTest -DargLine="-Dsystem.performance.test=true" test```
+- To run performance tests, execute the following ```./mvnw -Dtest="TokenizerTest#performanceTest" -DargLine="-Dsystem.performance.test=true" test```
 - My last run returned the following result:
 
     ```
