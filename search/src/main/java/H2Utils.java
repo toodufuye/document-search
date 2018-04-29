@@ -10,6 +10,7 @@ import java.io.File;
 
 class H2Utils {
     private static final Logger logger = LogManager.getLogger(H2Utils.class);
+    public static boolean isInserted = false;
 
     static void insertWordsIntoDatabase(Jdbi jdbi, List<File> files) {
         jdbi.useExtension(WordDao.class, dao -> {

@@ -36,7 +36,10 @@ class DocumentSearch {
                 .filter(File::isFile)
                 .filter(x -> x.getName().endsWith(".txt"));
 
-        H2Utils.insertWordsIntoDatabase(jdbi, files);
+        if (!H2Utils.isInserted) {
+            H2Utils.insertWordsIntoDatabase(jdbi, files);
+            H2Utils.isInserted = true;
+        }
         if (!files.isEmpty()) {
             Tuple2<String, Optional<Arguments.Method>> arguments = Arguments.getSearchMethod(
                     in,
