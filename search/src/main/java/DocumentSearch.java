@@ -38,7 +38,6 @@ class DocumentSearch {
                         out.print("Enter the search term: ");
                         return br.readLine();
                     });
-
             method = Failsafe.with(retryPolicy.retryWhen(null).retryOn(NumberFormatException.class))
                     .onFailedAttempt(failure -> out.println(String.format("Error %s. Please try again",
                             failure)))
@@ -57,7 +56,9 @@ class DocumentSearch {
     }
 
     List<SearchResult> searchTokens(List<File> files, Arguments arguments) {
-        String elasticSearchString = String.format("{\n\"query\":{\n\"term\":{\"token\":\"%s\"}\n},\n\"aggs\":{\n\"files\":{\n\"terms\":{\"field\":\"fileName\"}\n}\n}\n}", arguments.getInput());
+        String elasticSearchString = String.format(
+                "{\n\"query\":{\n\"term\":{\"token\":\"%s\"}\n},\n\"aggs\":{" +
+                        "\n\"files\":{\n\"terms\":{\"field\":\"fileName\"}\n}\n}\n}", arguments.getInput());
         List<SearchResult> result;
         switch (arguments.getMethod()) {
             case StringMatch:
@@ -69,11 +70,9 @@ class DocumentSearch {
                         .map(x -> new SearchResult(x.getAbsoluteFilePath(), x.regexMatch(arguments.getInput()).size()));
                 break;
             case Indexed:
-
                 String elasticResponse = Try.of(() -> Request.Post(String.format("%s/_search?size=0", elasticURL))
                         .bodyString(elasticSearchString, ContentType.APPLICATION_JSON)
                         .execute().returnContent().toString()).getOrElse("{}");
-
                 result = Try.of(() -> List.ofAll(mapper.readValue(elasticResponse, AggResponse.class)
                         .getAggregations()
                         .getFiles()
@@ -83,7 +82,6 @@ class DocumentSearch {
                 break;
             default:
                 result = List.empty();
-
         }
         return result;
     }
