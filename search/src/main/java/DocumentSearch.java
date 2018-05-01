@@ -1,15 +1,19 @@
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 import io.vavr.collection.List;
+import io.vavr.control.Try;
 import lombok.Builder;
 import models.Arguments;
 import models.Method;
 import models.SearchResult;
+import models.elasticResponse.AggResponse;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
+import org.apache.http.client.fluent.Request;
+import org.apache.http.entity.ContentType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jdbi.v3.core.Jdbi;
 
 import java.io.*;
 import java.util.Iterator;
@@ -20,6 +24,7 @@ class DocumentSearch {
     private RetryPolicy retryPolicy;
     private String directory;
     private String elasticURL;
+    @Builder.Default private final ObjectMapper mapper = new ObjectMapper();
     private InputStream in;
     private PrintStream out;
 
@@ -52,6 +57,7 @@ class DocumentSearch {
     }
 
     List<SearchResult> searchTokens(List<File> files, Arguments arguments) {
+        String elasticSearchString = String.format("{\n\"query\":{\n\"term\":{\"token\":\"%s\"}\n},\n\"aggs\":{\n\"files\":{\n\"terms\":{\"field\":\"fileName\"}\n}\n}\n}", arguments.getInput());
         List<SearchResult> result;
         switch (arguments.getMethod()) {
             case StringMatch:
@@ -63,7 +69,17 @@ class DocumentSearch {
                         .map(x -> new SearchResult(x.getAbsoluteFilePath(), x.regexMatch(arguments.getInput()).size()));
                 break;
             case Indexed:
-                result = List.empty();
+
+                String elasticResponse = Try.of(() -> Request.Post(String.format("%s/_search?size=0", elasticURL))
+                        .bodyString(elasticSearchString, ContentType.APPLICATION_JSON)
+                        .execute().returnContent().toString()).getOrElse("{}");
+
+                result = Try.of(() -> List.ofAll(mapper.readValue(elasticResponse, AggResponse.class)
+                        .getAggregations()
+                        .getFiles()
+                        .getBuckets())
+                        .map(x -> new SearchResult(x.getKey(), x.getDoc_count())))
+                        .getOrElse(List.empty());
                 break;
             default:
                 result = List.empty();
@@ -84,10 +100,10 @@ class DocumentSearch {
                 .filter(File::isFile)
                 .filter(x -> x.getName().endsWith(".txt"));
 
-//        if (!ElasticUtils.indexCreatedAndUpdated) {
-//            ElasticUtils.createIndex(elasticURL);
-//            ElasticUtils.insertIntoElasticSearch(files, retryPolicy, elasticURL);
-//        }
+        if (!ElasticUtils.indexExists(elasticURL)) {
+            ElasticUtils.createIndex(elasticURL);
+            ElasticUtils.insertIntoElasticSearch(files, retryPolicy, elasticURL);
+        }
 
         if (!files.isEmpty()) {
             Arguments arguments = getSearchMethod(in, out, retryPolicy);

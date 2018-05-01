@@ -15,6 +15,7 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.Assert.assertTrue;
 
 public class DocumentSearchTest {
+    private final String elasticURL = "http://localhost:9200/text";
     private RetryPolicy retryPolicy = new RetryPolicy()
             .retryOn(NumberFormatException.class)
             .withDelay(1, TimeUnit.MILLISECONDS)
@@ -25,6 +26,7 @@ public class DocumentSearchTest {
         InputStream is = new ByteArrayInputStream("the\n1".getBytes(StandardCharsets.UTF_8));
         DocumentSearch documentSearch = DocumentSearch.builder()
                 .retryPolicy(retryPolicy)
+                .elasticURL(elasticURL)
                 .directory("vogon_poetry")
                 .in(is)
                 .out(System.out)
@@ -37,6 +39,7 @@ public class DocumentSearchTest {
         InputStream is = new ByteArrayInputStream("\n\n1".getBytes(StandardCharsets.UTF_8));
         DocumentSearch documentSearch = DocumentSearch.builder()
                 .retryPolicy(retryPolicy)
+                .elasticURL(elasticURL)
                 .directory(Resources.getResource("sample_files").getPath())
                 .in(is)
                 .out(new PrintStream(new ByteArrayOutputStream())) // I'm suppressing console output intentionally
@@ -49,6 +52,7 @@ public class DocumentSearchTest {
         InputStream is = new ByteArrayInputStream("the\na".getBytes(StandardCharsets.UTF_8));
         DocumentSearch documentSearch = DocumentSearch.builder()
                 .retryPolicy(retryPolicy)
+                .elasticURL(elasticURL)
                 .directory(Resources.getResource("sample_files").getPath())
                 .in(is)
                 .out(new PrintStream(new ByteArrayOutputStream())) // I'm suppressing console output intentionally

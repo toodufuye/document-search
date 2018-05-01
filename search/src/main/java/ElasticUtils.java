@@ -2,6 +2,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.stanford.nlp.ling.CoreLabel;
 import io.vavr.collection.List;
 import io.vavr.control.Either;
+import io.vavr.control.Try;
 import models.DocumentToken;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
@@ -20,6 +21,10 @@ class ElasticUtils {
     private static final Logger logger = LogManager.getLogger(ElasticUtils.class);
     private static ObjectMapper objectMapper = new ObjectMapper();
     static boolean indexCreatedAndUpdated = false;
+
+    static boolean indexExists(String elasticURL) {
+        return !Try.of(() -> Request.Get(elasticURL).execute().returnContent().asString().contains("index_not_found_exception")).getOrElse(true);
+    }
 
     static void createIndex(String elasticURL) {
         String indexSettings = "{\"mappings\": {\"_doc\": {\"properties\": {\"fileName\": {\"type\": \"keyword\"},\"token\": {\"type\": \"text\", \"analyzer\": \"whitespace\"}}}}}";
