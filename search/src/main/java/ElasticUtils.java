@@ -48,7 +48,7 @@ class ElasticUtils {
                                             .retryOn(ClientProtocolException.class)
                                             .retryOn(IOException.class))
                                     .onFailedAttempt(failure -> logger.error(
-                                            "Error occurred while interacting with Elastic Search", failure))
+                                            "Error occurred while interacting with Elastic search", failure))
                                     .get(() -> Request.Put(
                                             String.format("%s/_doc/%s", elasticURL, atomicInteger.incrementAndGet()))
                                             .bodyString(

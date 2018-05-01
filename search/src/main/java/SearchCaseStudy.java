@@ -16,11 +16,6 @@ public class SearchCaseStudy {
     private static final Logger logger = LogManager.getLogger(SearchCaseStudy.class);
 
     public static void main(String[] args) {
-        // DB_CLOSE_DELAY=-1 will keep H2 from killing the in memory database till the vm dies.
-        // otherwise, the database goes away once the last connection is closed.
-        Jdbi jdbi = Jdbi.create("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1");
-        jdbi.installPlugin(new SqlObjectPlugin());
-
         final OptionParser optionParser = new OptionParser();
         optionParser.acceptsAll(Arrays.asList("d", "directory"), "path to directory of text files")
                 .withRequiredArg()
@@ -39,12 +34,11 @@ public class SearchCaseStudy {
             System.out.println(DocumentSearch.builder()
                     .directory(directory)
                     .elasticURL(elasticURL)
-                    .jdbi(jdbi)
                     .in(System.in)
                     .out(System.out)
                     .retryPolicy(retryPolicy)
                     .build()
-                    .Search());
+                    .search());
         } catch (OptionException oe) {
             try {
                 optionParser.printHelpOn(System.out);

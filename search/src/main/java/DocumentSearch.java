@@ -1,7 +1,5 @@
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
-import io.vavr.Tuple;
-import io.vavr.Tuple2;
 import io.vavr.collection.List;
 import lombok.Builder;
 import models.Arguments;
@@ -15,7 +13,6 @@ import org.jdbi.v3.core.Jdbi;
 
 import java.io.*;
 import java.util.Iterator;
-import java.util.Optional;
 
 @Builder
 class DocumentSearch {
@@ -25,7 +22,6 @@ class DocumentSearch {
     private String elasticURL;
     private InputStream in;
     private PrintStream out;
-    private Jdbi jdbi;
 
     static Arguments getSearchMethod(InputStream in, PrintStream out, RetryPolicy retryPolicy) {
         String input = "";
@@ -42,7 +38,7 @@ class DocumentSearch {
                     .onFailedAttempt(failure -> out.println(String.format("Error %s. Please try again",
                             failure)))
                     .get(() -> {
-                        out.print("Search Method: 1) String Match, 2) Regular Expression, 3) Indexed ");
+                        out.print("search Method: 1) String Match, 2) Regular Expression, 3) Indexed ");
                         return Method.getEndpoint(Integer.parseInt(br.readLine()));
                     });
         } catch (IOException io) {
@@ -55,7 +51,28 @@ class DocumentSearch {
         return Arguments.builder().input(input).method(method).build();
     }
 
-    String Search() {
+    List<SearchResult> searchTokens(List<File> files, Arguments arguments) {
+        List<SearchResult> result;
+        switch (arguments.getMethod()) {
+            case StringMatch:
+                result = files.map(x -> Tokenizer.builder().file(x).build())
+                        .map(x -> new SearchResult(x.getAbsoluteFilePath(), x.stringMatch(arguments.getInput()).size()));
+                break;
+            case RegexMatch:
+                result = files.map(x -> Tokenizer.builder().file(x).build())
+                        .map(x -> new SearchResult(x.getAbsoluteFilePath(), x.regexMatch(arguments.getInput()).size()));
+                break;
+            case Indexed:
+                result = List.empty();
+                break;
+            default:
+                result = List.empty();
+
+        }
+        return result;
+    }
+
+    String search() {
         Iterator<File> fileIterator = Files.fileTraverser()
                 .breadthFirst(new File(directory))
                 .iterator();
@@ -66,11 +83,6 @@ class DocumentSearch {
         List<File> files = List.ofAll(Lists.newArrayList(fileIterator))
                 .filter(File::isFile)
                 .filter(x -> x.getName().endsWith(".txt"));
-
-        if (!H2Utils.isInserted) {
-            H2Utils.insertWordsIntoDatabase(jdbi, files);
-            H2Utils.isInserted = true;
-        }
 
 //        if (!ElasticUtils.indexCreatedAndUpdated) {
 //            ElasticUtils.createIndex(elasticURL);
@@ -83,10 +95,7 @@ class DocumentSearch {
                 return "Please provide a non empty string for the search term";
             } else {
                 Long startTime = System.currentTimeMillis();
-                // this can be parallel mapped for speed improvements given a large enough list of files and the processing cores to support it
-                return files.map(x -> Tokenizer.builder().file(x).jdbi(jdbi).build())
-                        .map(x -> x.searchTokens(arguments.getInput(), arguments.getMethod())) // the second tuple argument will be present in this else case.
-                        .map(Optional::get)
+                return searchTokens(files, arguments)
                         .sortBy(SearchResult::getOccurrences)
                         .reverse()
                         .map(x -> String.format("%s - %s matches", x.getFileName(), x.getOccurrences()))

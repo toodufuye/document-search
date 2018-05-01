@@ -20,13 +20,6 @@ public class DocumentSearchTest {
             .withDelay(1, TimeUnit.MILLISECONDS)
             .withMaxRetries(1);
 
-    private Jdbi jdbi = Jdbi.create("jdbc:h2:mem:test");
-
-    @Before
-    public void setUp() {
-        jdbi.installPlugin(new SqlObjectPlugin());
-    }
-
     @Test
     public void searchWithBadDirectory() {
         InputStream is = new ByteArrayInputStream("the\n1".getBytes(StandardCharsets.UTF_8));
@@ -35,9 +28,8 @@ public class DocumentSearchTest {
                 .directory("vogon_poetry")
                 .in(is)
                 .out(System.out)
-                .jdbi(jdbi)
                 .build();
-        assertTrue(documentSearch.Search().contains("There are no text files in the directory vogon_poetry"));
+        assertTrue(documentSearch.search().contains("There are no text files in the directory vogon_poetry"));
     }
 
     @Test
@@ -48,9 +40,8 @@ public class DocumentSearchTest {
                 .directory(Resources.getResource("sample_files").getPath())
                 .in(is)
                 .out(new PrintStream(new ByteArrayOutputStream())) // I'm suppressing console output intentionally
-                .jdbi(jdbi)
                 .build();
-        assertTrue(documentSearch.Search().contains("Please provide a non empty string for the search term"));
+        assertTrue(documentSearch.search().contains("Please provide a non empty string for the search term"));
     }
 
     @Test
@@ -61,8 +52,7 @@ public class DocumentSearchTest {
                 .directory(Resources.getResource("sample_files").getPath())
                 .in(is)
                 .out(new PrintStream(new ByteArrayOutputStream())) // I'm suppressing console output intentionally
-                .jdbi(jdbi)
                 .build();
-        assertTrue(documentSearch.Search().contains("Elasped time"));
+        assertTrue(documentSearch.search().contains("Elasped time"));
     }
 }
