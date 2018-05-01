@@ -1,18 +1,19 @@
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
+import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.collection.List;
 import lombok.Builder;
+import models.Arguments;
 import models.Method;
 import models.SearchResult;
+import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jdbi.v3.core.Jdbi;
 
-import java.io.File;
-import java.io.InputStream;
-import java.io.PrintStream;
+import java.io.*;
 import java.util.Iterator;
 import java.util.Optional;
 
@@ -26,29 +27,33 @@ class DocumentSearch {
     private PrintStream out;
     private Jdbi jdbi;
 
-//    Optional<SearchResult> searchTokens(String input, File file, Arguments.Method method) {
-//        Optional<SearchResult> result;
-//        switch (method) {
-//            case StringMatch:
-//                result = Optional.of(new SearchResult(file.getAbsolutePath(),
-//                        getCached().map(x -> x.filter(y -> y.originalText().equals(input))).right().get().size()));
-//                break;
-//            case RegexMatch:
-//                result = Optional.of(new SearchResult(file.getAbsolutePath(), regexMatch(getCached(), input).size()));
-//                break;
-//            case Indexed:
-//                result = Optional.of(new SearchResult(
-//                        file.getAbsolutePath(),
-//                        jdbi.withExtension(
-//                                WordDao.class,
-//                                dao -> dao.countOccurences(input, file.getAbsolutePath()))));
-//                break;
-//            default:
-//                // The default should never be reached.  Just in case, it's set to an empty Optional
-//                result = Optional.empty();
-//        }
-//        return result;
-//    }
+    static Arguments getSearchMethod(InputStream in, PrintStream out, RetryPolicy retryPolicy) {
+        String input = "";
+        Method method;
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(in))) {
+            input = Failsafe.with(retryPolicy.retryWhen(""))
+                    .onFailedAttempt(failure -> out.println("Please enter a non empty string"))
+                    .get(() -> {
+                        out.print("Enter the search term: ");
+                        return br.readLine();
+                    });
+
+            method = Failsafe.with(retryPolicy.retryWhen(null).retryOn(NumberFormatException.class))
+                    .onFailedAttempt(failure -> out.println(String.format("Error %s. Please try again",
+                            failure)))
+                    .get(() -> {
+                        out.print("Search Method: 1) String Match, 2) Regular Expression, 3) Indexed ");
+                        return Method.getEndpoint(Integer.parseInt(br.readLine()));
+                    });
+        } catch (IOException io) {
+            logger.error("Error occurred while reading input from the console.  Setting Method to String Match", io);
+            method = Method.StringMatch;
+        } catch (NumberFormatException ne) {
+            logger.error("Error occurred while formatting number.  Setting Method to String Match", ne);
+            method = Method.StringMatch;
+        }
+        return Arguments.builder().input(input).method(method).build();
+    }
 
     String Search() {
         Iterator<File> fileIterator = Files.fileTraverser()
@@ -67,25 +72,20 @@ class DocumentSearch {
             H2Utils.isInserted = true;
         }
 
-        if (!ElasticUtils.indexCreatedAndUpdated) {
-            ElasticUtils.createIndex(elasticURL);
-            ElasticUtils.insertIntoElasticSearch(files, retryPolicy, elasticURL);
-        }
+//        if (!ElasticUtils.indexCreatedAndUpdated) {
+//            ElasticUtils.createIndex(elasticURL);
+//            ElasticUtils.insertIntoElasticSearch(files, retryPolicy, elasticURL);
+//        }
 
         if (!files.isEmpty()) {
-            Tuple2<String, Optional<Method>> arguments = Arguments.getSearchMethod(
-                    in,
-                    out,
-                    retryPolicy);
-            if (arguments._1.isEmpty()) {
+            Arguments arguments = getSearchMethod(in, out, retryPolicy);
+            if (arguments.getInput().isEmpty()) {
                 return "Please provide a non empty string for the search term";
-            } else if (!arguments._2.isPresent()) {
-                return "Please provide a valid search method";
             } else {
                 Long startTime = System.currentTimeMillis();
                 // this can be parallel mapped for speed improvements given a large enough list of files and the processing cores to support it
                 return files.map(x -> Tokenizer.builder().file(x).jdbi(jdbi).build())
-                        .map(x -> x.searchTokens(arguments._1, arguments._2.get())) // the second tuple argument will be present in this else case.
+                        .map(x -> x.searchTokens(arguments.getInput(), arguments.getMethod())) // the second tuple argument will be present in this else case.
                         .map(Optional::get)
                         .sortBy(SearchResult::getOccurrences)
                         .reverse()

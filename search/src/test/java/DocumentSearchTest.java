@@ -63,6 +63,6 @@ public class DocumentSearchTest {
                 .out(new PrintStream(new ByteArrayOutputStream())) // I'm suppressing console output intentionally
                 .jdbi(jdbi)
                 .build();
-        assertTrue(documentSearch.Search().contains("Please provide a valid search method"));
+        assertTrue(documentSearch.Search().contains("Elasped time"));
     }
 }

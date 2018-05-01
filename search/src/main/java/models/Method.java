@@ -14,20 +14,20 @@ import java.util.Optional;
             this.num = num;
         }
 
-        public static Optional<models.Method> getEndpoint(int num) {
-            Optional<models.Method> temp;
+        public static Method getEndpoint(int num) {
+            Method temp;
             switch (num) {
                 case 1:
-                    temp = Optional.of(models.Method.StringMatch);
+                    temp = Method.StringMatch;
                     break;
                 case 2:
-                    temp = Optional.of(models.Method.RegexMatch);
+                    temp = Method.RegexMatch;
                     break;
                 case 3:
-                    temp = Optional.of(models.Method.Indexed);
+                    temp = Method.Indexed;
                     break;
                 default:
-                    temp = Optional.empty();
+                    temp = Method.StringMatch;
             }
             return temp;
         }
