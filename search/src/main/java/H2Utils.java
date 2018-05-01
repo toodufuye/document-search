@@ -19,7 +19,6 @@ class H2Utils {
             files.forEach(file -> {
                 Either<Exception, List<CoreLabel>> tokens = Tokenizer.builder()
                         .file(file)
-                        .jdbi(jdbi)
                         .build()
                         .getCached();
 

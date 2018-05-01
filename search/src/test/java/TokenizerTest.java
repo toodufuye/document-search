@@ -4,6 +4,7 @@ import edu.stanford.nlp.ling.CoreLabel;
 import io.vavr.Function1;
 import io.vavr.collection.List;
 import io.vavr.control.Either;
+import models.Method;
 import models.SearchResult;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.sqlobject.SqlObjectPlugin;
@@ -39,11 +40,11 @@ public class TokenizerTest {
                 }
         );
 
-        SearchResult stringResult = tokenizer.searchTokens("the", Arguments.Method.StringMatch)
+        SearchResult stringResult = tokenizer.searchTokens("the", Method.StringMatch)
                 .orElse(new SearchResult("ford_prefect", 9999));
-        SearchResult regexResult = tokenizer.searchTokens("/the/", Arguments.Method.RegexMatch)
+        SearchResult regexResult = tokenizer.searchTokens("/the/", Method.RegexMatch)
                 .orElse(new SearchResult("ford_prefect", 9999));
-        SearchResult indexedResult = tokenizer.searchTokens("the", Arguments.Method.Indexed)
+        SearchResult indexedResult = tokenizer.searchTokens("the", Method.Indexed)
                 .orElse(new SearchResult("ford_prefect", 9999));
 
         assertTrue(stringResult.getFileName().endsWith("hitchhikers.txt"));
@@ -53,7 +54,7 @@ public class TokenizerTest {
 
         assertEquals(
                 new Integer(29),
-                tokenizer.searchTokens("/the|The/", Arguments.Method.RegexMatch)
+                tokenizer.searchTokens("/the|The/", Method.RegexMatch)
                         .orElse(new SearchResult("ford_prefect", 9999))
                         .getOccurrences());
     }
@@ -88,7 +89,7 @@ public class TokenizerTest {
         List<Tokenizer> tokenizers = testFiles.map(x -> Tokenizer.builder().file(x).jdbi(jdbi).build());
         H2Utils.insertWordsIntoDatabase(jdbi, testFiles);
 
-        Function1<Arguments.Method, Long> runPerformanceTest = (method) -> {
+        Function1<Method, Long> runPerformanceTest = (method) -> {
             // Todo: test for word "faster-than-light"
             List<String> words = List.of("France", "the", "and", "Hitchhiker", "XIV", "2004", "Improbability",
                     "a", "regime", "in", "I", "drive", "for", "often", "is", "has");
@@ -102,8 +103,8 @@ public class TokenizerTest {
         };
 
         System.out.println("\n<----------------  Performance Testing Results ---------------->");
-        System.out.println(String.format("2,000,000 million searches with the String method took: %s ms", runPerformanceTest.apply(Arguments.Method.StringMatch)));
-        System.out.println(String.format("2,000,000 million searches with the Regex method took: %s ms", runPerformanceTest.apply(Arguments.Method.RegexMatch)));
-        System.out.println(String.format("2,000,000 million searches with the Indexed method took: %s ms", runPerformanceTest.apply(Arguments.Method.Indexed)));
+        System.out.println(String.format("2,000,000 million searches with the String method took: %s ms", runPerformanceTest.apply(Method.StringMatch)));
+        System.out.println(String.format("2,000,000 million searches with the Regex method took: %s ms", runPerformanceTest.apply(Method.RegexMatch)));
+        System.out.println(String.format("2,000,000 million searches with the Indexed method took: %s ms", runPerformanceTest.apply(Method.Indexed)));
     }
 }

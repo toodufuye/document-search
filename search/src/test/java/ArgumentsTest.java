@@ -1,4 +1,5 @@
 import lombok.val;
+import models.Method;
 import net.jodah.failsafe.RetryPolicy;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,7 +32,7 @@ public class ArgumentsTest {
         val result = Arguments.getSearchMethod(is, System.out, retryPolicy);
         assertEquals("the", result._1);
         assertTrue(result._2.isPresent());
-        assertEquals(result._2.get(), Arguments.Method.StringMatch);
+        assertEquals(result._2.get(), Method.StringMatch);
     }
 
     @Test
@@ -54,14 +55,14 @@ public class ArgumentsTest {
     public void getSearchMethodRegex() {
         InputStream is = new ByteArrayInputStream("the\n2".getBytes(StandardCharsets.UTF_8));
         val result = Arguments.getSearchMethod(is, System.out, retryPolicy);
-        assertEquals(result._2.get(), Arguments.Method.RegexMatch);
+        assertEquals(result._2.get(), Method.RegexMatch);
     }
 
     @Test
     public void getSearchMethodIndexed() {
         InputStream is = new ByteArrayInputStream("the\n3".getBytes(StandardCharsets.UTF_8));
         val result = Arguments.getSearchMethod(is, System.out, retryPolicy);
-        assertEquals(result._2.get(), Arguments.Method.Indexed);
+        assertEquals(result._2.get(), Method.Indexed);
     }
 
     @Test

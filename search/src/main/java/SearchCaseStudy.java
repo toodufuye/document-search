@@ -31,11 +31,14 @@ public class SearchCaseStudy {
                 .withDelay(1, TimeUnit.SECONDS)
                 .withMaxRetries(3);
 
+        final String elasticURL = "http://localhost:9200/text";
+
         try {
             final OptionSet optionSet = optionParser.parse(args);
             final String directory = optionSet.valueOf("directory").toString();
             System.out.println(DocumentSearch.builder()
                     .directory(directory)
+                    .elasticURL(elasticURL)
                     .jdbi(jdbi)
                     .in(System.in)
                     .out(System.out)

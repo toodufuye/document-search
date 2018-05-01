@@ -10,6 +10,7 @@ import io.vavr.collection.List;
 import io.vavr.control.Either;
 import lombok.Builder;
 import lombok.Getter;
+import models.Method;
 import models.SearchResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -64,7 +65,7 @@ class Tokenizer {
      * @return an Optional search result.  The default case requires a value even if it will never be hit
      * This forces me to set the result and an empty optional fits here.
      */
-    Optional<SearchResult> searchTokens(String input, Arguments.Method method) {
+    Optional<SearchResult> searchTokens(String input, Method method) {
         Optional<SearchResult> result;
         switch (method) {
             case StringMatch:

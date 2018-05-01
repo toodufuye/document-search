@@ -3,6 +3,7 @@ import com.google.common.io.Files;
 import io.vavr.Tuple2;
 import io.vavr.collection.List;
 import lombok.Builder;
+import models.Method;
 import models.SearchResult;
 import net.jodah.failsafe.RetryPolicy;
 import org.apache.logging.log4j.LogManager;
@@ -20,9 +21,34 @@ class DocumentSearch {
     private static final Logger logger = LogManager.getLogger(DocumentSearch.class);
     private RetryPolicy retryPolicy;
     private String directory;
+    private String elasticURL;
     private InputStream in;
     private PrintStream out;
     private Jdbi jdbi;
+
+//    Optional<SearchResult> searchTokens(String input, File file, Arguments.Method method) {
+//        Optional<SearchResult> result;
+//        switch (method) {
+//            case StringMatch:
+//                result = Optional.of(new SearchResult(file.getAbsolutePath(),
+//                        getCached().map(x -> x.filter(y -> y.originalText().equals(input))).right().get().size()));
+//                break;
+//            case RegexMatch:
+//                result = Optional.of(new SearchResult(file.getAbsolutePath(), regexMatch(getCached(), input).size()));
+//                break;
+//            case Indexed:
+//                result = Optional.of(new SearchResult(
+//                        file.getAbsolutePath(),
+//                        jdbi.withExtension(
+//                                WordDao.class,
+//                                dao -> dao.countOccurences(input, file.getAbsolutePath()))));
+//                break;
+//            default:
+//                // The default should never be reached.  Just in case, it's set to an empty Optional
+//                result = Optional.empty();
+//        }
+//        return result;
+//    }
 
     String Search() {
         Iterator<File> fileIterator = Files.fileTraverser()
@@ -40,8 +66,14 @@ class DocumentSearch {
             H2Utils.insertWordsIntoDatabase(jdbi, files);
             H2Utils.isInserted = true;
         }
+
+        if (!ElasticUtils.indexCreatedAndUpdated) {
+            ElasticUtils.createIndex(elasticURL);
+            ElasticUtils.insertIntoElasticSearch(files, retryPolicy, elasticURL);
+        }
+
         if (!files.isEmpty()) {
-            Tuple2<String, Optional<Arguments.Method>> arguments = Arguments.getSearchMethod(
+            Tuple2<String, Optional<Method>> arguments = Arguments.getSearchMethod(
                     in,
                     out,
                     retryPolicy);
