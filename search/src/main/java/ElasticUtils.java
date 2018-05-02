@@ -3,7 +3,7 @@ import edu.stanford.nlp.ling.CoreLabel;
 import io.vavr.collection.List;
 import io.vavr.control.Either;
 import io.vavr.control.Try;
-import models.DocumentToken;
+import models.Document;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
 import org.apache.http.client.ClientProtocolException;
@@ -27,7 +27,7 @@ class ElasticUtils {
     }
 
     static void createIndex(String elasticURL) {
-        String indexSettings = "{\"mappings\": {\"_doc\": {\"properties\": {\"fileName\": {\"type\": \"keyword\"},\"token\": {\"type\": \"text\", \"analyzer\": \"whitespace\"}}}}}";
+        String indexSettings = "{\"mappings\": {\"_doc\": {\"properties\": {\"fileName\": {\"type\": \"keyword\"},\"content\": {\"type\": \"text\", \"analyzer\": \"whitespace\"}}}}}";
         try {
             Response response = Request.Put(elasticURL)
                     .bodyString(indexSettings, ContentType.APPLICATION_JSON)
@@ -58,7 +58,7 @@ class ElasticUtils {
                                             String.format("%s/_doc/%s", elasticURL, atomicInteger.incrementAndGet()))
                                             .bodyString(
                                                     objectMapper.writeValueAsString(
-                                                            new DocumentToken(file.getAbsolutePath(), z.originalText())),
+                                                            new Document(file.getAbsolutePath(), z.originalText())),
                                                     ContentType.APPLICATION_JSON)
                                             .execute()).discardContent()
                     ));
