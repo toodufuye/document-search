@@ -3,7 +3,7 @@ package models;
 import lombok.Value;
 
 @Value
-public class DocumentToken {
+public class Document {
     public String fileName;
-    public String token;
+    public String content;
 }

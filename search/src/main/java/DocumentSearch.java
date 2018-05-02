@@ -57,7 +57,7 @@ class DocumentSearch {
 
     List<SearchResult> searchTokens(List<File> files, Arguments arguments) {
         String elasticSearchString = String.format(
-                "{\n\"query\":{\n\"term\":{\"token\":\"%s\"}\n},\n\"aggs\":{" +
+                "{\n\"query\":{\n\"term\":{\"content\":\"%s\"}\n},\n\"aggs\":{" +
                         "\n\"files\":{\n\"terms\":{\"field\":\"fileName\"}\n}\n}\n}", arguments.getInput());
         List<SearchResult> result;
         switch (arguments.getMethod()) {
