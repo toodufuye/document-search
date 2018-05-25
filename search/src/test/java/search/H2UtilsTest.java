@@ -1,6 +1,9 @@
+package search;
+
 import io.vavr.collection.List;
 import org.jdbi.v3.core.Jdbi;
 import org.junit.Test;
+import search.H2Utils;
 
 import java.io.File;
 

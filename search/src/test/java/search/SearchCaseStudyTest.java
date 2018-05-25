@@ -1,3 +1,5 @@
+package search;
+
 import com.google.common.io.Resources;
 import org.junit.Test;
 

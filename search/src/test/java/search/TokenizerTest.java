@@ -1,15 +1,18 @@
+package search;
+
 import com.google.common.io.Resources;
-import db.WordDao;
 import edu.stanford.nlp.ling.CoreLabel;
 import io.vavr.Function1;
 import io.vavr.collection.List;
 import io.vavr.control.Either;
-import models.SearchResult;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.sqlobject.SqlObjectPlugin;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
+import search.db.WordDao;
+import search.models.ImmutableSearchResult;
+import search.models.SearchResult;
 
 import java.io.File;
 import java.util.Random;
@@ -30,46 +33,46 @@ public class TokenizerTest {
 
     @Test
     public void searchTokens() {
-        Tokenizer tokenizer = Tokenizer.builder().file(testFile).jdbi(jdbi).build();
+        Tokenizer tokenizer = ImmutableTokenizer.builder().file(testFile).jdbi(jdbi).build();
         // Setup the in memory database
         jdbi.useExtension(WordDao.class, dao -> {
                     dao.createTable();
-                    tokenizer.getCached()
+                    tokenizer.tokens()
                             .forEach((List<CoreLabel> x) -> x.forEach(y -> dao.insert(y.originalText(), testFile.getAbsolutePath())));
                 }
         );
 
         SearchResult stringResult = tokenizer.searchTokens("the", Arguments.Method.StringMatch)
-                .orElse(new SearchResult("ford_prefect", 9999));
+                .orElse(ImmutableSearchResult.builder().fileName("ford_prefect").occurrences(9999).build());
         SearchResult regexResult = tokenizer.searchTokens("/the/", Arguments.Method.RegexMatch)
-                .orElse(new SearchResult("ford_prefect", 9999));
+                .orElse(ImmutableSearchResult.builder().fileName("ford_prefect").occurrences(9999).build());
         SearchResult indexedResult = tokenizer.searchTokens("the", Arguments.Method.Indexed)
-                .orElse(new SearchResult("ford_prefect", 9999));
+                .orElse(ImmutableSearchResult.builder().fileName("ford_prefect").occurrences(9999).build());
 
-        assertTrue(stringResult.getFileName().endsWith("hitchhikers.txt"));
-        assertEquals(new Integer(21), stringResult.getOccurrences());
+        assertTrue(stringResult.fileName().endsWith("hitchhikers.txt"));
+        assertEquals(new Integer(21), stringResult.occurrences());
         assertEquals(stringResult, regexResult);
         assertEquals(stringResult, indexedResult);
 
         assertEquals(
                 new Integer(29),
                 tokenizer.searchTokens("/the|The/", Arguments.Method.RegexMatch)
-                        .orElse(new SearchResult("ford_prefect", 9999))
-                        .getOccurrences());
+                        .orElse(ImmutableSearchResult.builder().fileName("ford_prefect").occurrences(9999).build())
+                        .occurrences());
     }
 
     @Test(expected = NullPointerException.class)
     public void searchTokensWithNullValue() {
-        Tokenizer tokenizer = Tokenizer.builder().file(testFile).jdbi(jdbi).build();
+        Tokenizer tokenizer = ImmutableTokenizer.builder().file(testFile).jdbi(jdbi).build();
         tokenizer.searchTokens("the", null);
     }
 
     @Test
     public void getCached() {
         File spyFile = spy(testFile);
-        Tokenizer tokenizer = Tokenizer.builder().file(spyFile).jdbi(jdbi).build();
-        Either<Exception, List<CoreLabel>> first = tokenizer.getCached();
-        Either<Exception, List<CoreLabel>> second = tokenizer.getCached();
+        Tokenizer tokenizer = ImmutableTokenizer.builder().file(spyFile).jdbi(jdbi).build();
+        Either<Exception, List<CoreLabel>> first = tokenizer.tokens();
+        Either<Exception, List<CoreLabel>> second = tokenizer.tokens();
         verify(spyFile, times(1)).getPath();
         assertEquals(first, second);
     }
@@ -85,7 +88,7 @@ public class TokenizerTest {
                 new File(Resources.getResource("sample_files/sample_text/hitchhikers.txt").getPath()),
                 new File(Resources.getResource("sample_files/sample_text/french_armed_forces.txt").getPath())
         );
-        List<Tokenizer> tokenizers = testFiles.map(x -> Tokenizer.builder().file(x).jdbi(jdbi).build());
+        List<Tokenizer> tokenizers = testFiles.map(x -> ImmutableTokenizer.builder().file(x).jdbi(jdbi).build());
         H2Utils.insertWordsIntoDatabase(jdbi, testFiles);
 
         Function1<Arguments.Method, Long> runPerformanceTest = (method) -> {

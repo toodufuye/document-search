@@ -1,5 +1,8 @@
+package search;
+
 import com.google.common.io.Files;
-import db.WordDao;
+import org.immutables.value.Value;
+import search.db.WordDao;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.ling.tokensregex.TokenSequenceMatcher;
 import edu.stanford.nlp.ling.tokensregex.TokenSequencePattern;
@@ -8,9 +11,8 @@ import edu.stanford.nlp.process.PTBTokenizer;
 import edu.stanford.nlp.util.CoreMap;
 import io.vavr.collection.List;
 import io.vavr.control.Either;
-import lombok.Builder;
-import lombok.Getter;
-import models.SearchResult;
+import search.models.ImmutableSearchResult;
+import search.models.SearchResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jdbi.v3.core.Jdbi;
@@ -24,19 +26,20 @@ import java.util.Optional;
 import static io.vavr.API.Left;
 import static io.vavr.API.Right;
 
-@Builder
-class Tokenizer {
+@Value.Immutable
+public abstract class Tokenizer {
     private static final Logger logger = LogManager.getLogger(Tokenizer.class);
 
-    private File file;
-    private final Jdbi jdbi;
+    public abstract File file();
+    public abstract Jdbi jdbi();
 
     // this value is cached automatically by lombok
-    @Getter(lazy = true)
-    private final Either<Exception, List<CoreLabel>> cached = getTokens();
 
-    private Either<Exception, List<CoreLabel>> getTokens() {
-        try (Reader reader = Files.asCharSource(this.file, Charset.defaultCharset()).openStream()) {
+//    private final Either<Exception, List<CoreLabel>> cached = getTokens();
+
+    @Value.Lazy
+    public Either<Exception, List<CoreLabel>> tokens() {
+        try (Reader reader = Files.asCharSource(this.file(), Charset.defaultCharset()).openStream()) {
             return Right(List.ofAll(new PTBTokenizer<>(reader, new CoreLabelTokenFactory(), "").tokenize()));
         } catch (IOException io) {
             // This branch is very difficult to hit in tests, even via mocks.  The reason is that the InputStream
@@ -68,18 +71,28 @@ class Tokenizer {
         Optional<SearchResult> result;
         switch (method) {
             case StringMatch:
-                result = Optional.of(new SearchResult(file.getAbsolutePath(),
-                        getCached().map(x -> x.filter(y -> y.originalText().equals(input))).right().get().size()));
+                result = Optional.of(
+                        ImmutableSearchResult.builder()
+                                .fileName(this.file().getAbsolutePath())
+                                .occurrences(tokens()
+                                        .map(x -> x.filter(y -> y.originalText().equals(input)))
+                                        .right().get().size()).build());
                 break;
             case RegexMatch:
-                result = Optional.of(new SearchResult(file.getAbsolutePath(), regexMatch(getCached(), input).size()));
+                result = Optional.of(
+                        ImmutableSearchResult.builder()
+                                .fileName(file().getAbsolutePath())
+                                .occurrences(regexMatch(tokens(), input).size()).build());
                 break;
             case Indexed:
-                result = Optional.of(new SearchResult(
-                        file.getAbsolutePath(),
-                        jdbi.withExtension(
-                                WordDao.class,
-                                dao -> dao.countOccurences(input, file.getAbsolutePath()))));
+                result = Optional.of(
+                        ImmutableSearchResult.builder()
+                                .fileName(file().getAbsolutePath())
+                                .occurrences(jdbi().withExtension(
+                                        WordDao.class,
+                                        dao -> dao.countOccurences(input, file().getAbsolutePath())
+                                ))
+                                .build());
                 break;
             default:
                 // The default should never be reached.  Just in case, it's set to an empty Optional

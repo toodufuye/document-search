@@ -1,3 +1,5 @@
+package search;
+
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import net.jodah.failsafe.Failsafe;

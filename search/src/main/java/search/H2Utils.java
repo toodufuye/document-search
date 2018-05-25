@@ -1,4 +1,6 @@
-import db.WordDao;
+package search;
+
+import search.db.WordDao;
 import edu.stanford.nlp.ling.CoreLabel;
 import io.vavr.collection.List;
 import io.vavr.control.Either;
@@ -17,11 +19,11 @@ class H2Utils {
             dao.createTable();
             dao.createIndex();
             files.forEach(file -> {
-                Either<Exception, List<CoreLabel>> tokens = Tokenizer.builder()
+                Either<Exception, List<CoreLabel>> tokens = ImmutableTokenizer.builder()
                         .file(file)
                         .jdbi(jdbi)
                         .build()
-                        .getCached();
+                        .tokens();
 
                 // Either projections only get executed if the projection matches the actual value.
                 tokens.right()
@@ -30,7 +32,7 @@ class H2Utils {
                                 file.getAbsolutePath())));
 
                 // I can't hit tokens.left() via testing because I have not gotten an exception to occur while
-                // reading files.  Reasoning is explained in the Tokenizer.getTokens() method.
+                // reading files.  Reasoning is explained in the search.Tokenizer.getTokens() method.
                 tokens.left()
                         .forEach(x -> logger.error(
                                 "Error occurred while retrieving tokens.  Cannot add tokens to the database", x));

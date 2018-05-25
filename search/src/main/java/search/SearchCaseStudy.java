@@ -1,3 +1,5 @@
+package search;
+
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -34,7 +36,7 @@ public class SearchCaseStudy {
         try {
             final OptionSet optionSet = optionParser.parse(args);
             final String directory = optionSet.valueOf("directory").toString();
-            System.out.println(DocumentSearch.builder()
+            System.out.println(ImmutableDocumentSearch.builder()
                     .directory(directory)
                     .jdbi(jdbi)
                     .in(System.in)

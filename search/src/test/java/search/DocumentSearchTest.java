@@ -1,9 +1,12 @@
+package search;
+
 import com.google.common.io.Resources;
 import net.jodah.failsafe.RetryPolicy;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.sqlobject.SqlObjectPlugin;
 import org.junit.Before;
 import org.junit.Test;
+import search.DocumentSearch;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -30,7 +33,7 @@ public class DocumentSearchTest {
     @Test
     public void searchWithBadDirectory() {
         InputStream is = new ByteArrayInputStream("the\n1".getBytes(StandardCharsets.UTF_8));
-        DocumentSearch documentSearch = DocumentSearch.builder()
+        DocumentSearch documentSearch = ImmutableDocumentSearch.builder()
                 .retryPolicy(retryPolicy)
                 .directory("vogon_poetry")
                 .in(is)
@@ -43,7 +46,7 @@ public class DocumentSearchTest {
     @Test
     public void searchWithNoInput() {
         InputStream is = new ByteArrayInputStream("\n\n1".getBytes(StandardCharsets.UTF_8));
-        DocumentSearch documentSearch = DocumentSearch.builder()
+        DocumentSearch documentSearch = ImmutableDocumentSearch.builder()
                 .retryPolicy(retryPolicy)
                 .directory(Resources.getResource("sample_files").getPath())
                 .in(is)
@@ -56,7 +59,7 @@ public class DocumentSearchTest {
     @Test
     public void searchWithNoMethod() {
         InputStream is = new ByteArrayInputStream("the\na".getBytes(StandardCharsets.UTF_8));
-        DocumentSearch documentSearch = DocumentSearch.builder()
+        DocumentSearch documentSearch = ImmutableDocumentSearch.builder()
                 .retryPolicy(retryPolicy)
                 .directory(Resources.getResource("sample_files").getPath())
                 .in(is)
