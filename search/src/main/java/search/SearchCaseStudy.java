@@ -1,11 +1,11 @@
+package search;
+
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import net.jodah.failsafe.RetryPolicy;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jdbi.v3.core.Jdbi;
-import org.jdbi.v3.sqlobject.SqlObjectPlugin;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -31,7 +31,7 @@ public class SearchCaseStudy {
         try {
             final OptionSet optionSet = optionParser.parse(args);
             final String directory = optionSet.valueOf("directory").toString();
-            System.out.println(DocumentSearch.builder()
+            System.out.println(ImmutableDocumentSearch.builder()
                     .directory(directory)
                     .elasticURL(elasticURL)
                     .in(System.in)

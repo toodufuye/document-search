@@ -1,4 +1,7 @@
+package search;
+
 import com.google.common.io.Resources;
+import org.jdbi.v3.core.Jdbi;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
@@ -8,8 +11,10 @@ import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
 public class SearchCaseStudyTest {
+    private final Jdbi jdbi = mock(Jdbi.class);
 
     @Test
     public void mainWithNoArguments() {

@@ -1,3 +1,5 @@
+package search;
+
 import com.google.common.io.Resources;
 import edu.stanford.nlp.ling.CoreLabel;
 import io.vavr.collection.List;
@@ -25,9 +27,9 @@ public class TokenizerTest {
     @Test
     public void getCached() {
         File spyFile = spy(testFile);
-        Tokenizer tokenizer = Tokenizer.builder().file(spyFile).build();
-        Either<Exception, List<CoreLabel>> first = tokenizer.getCached();
-        Either<Exception, List<CoreLabel>> second = tokenizer.getCached();
+        Tokenizer tokenizer = ImmutableTokenizer.builder().file(spyFile).build();
+        Either<Exception, List<CoreLabel>> first = tokenizer.tokens();
+        Either<Exception, List<CoreLabel>> second = tokenizer.tokens();
         verify(spyFile, times(1)).getPath();
         assertEquals(first, second);
     }

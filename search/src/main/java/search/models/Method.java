@@ -1,9 +1,7 @@
-package models;
-
-import java.util.Optional;
+package search.models;
 
 
-    public enum Method {
+public enum Method {
         StringMatch(1),
         RegexMatch(2),
         Indexed(3);

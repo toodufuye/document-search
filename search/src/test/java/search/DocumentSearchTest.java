@@ -1,9 +1,11 @@
+package search;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Resources;
 import net.jodah.failsafe.RetryPolicy;
-import org.jdbi.v3.core.Jdbi;
-import org.jdbi.v3.sqlobject.SqlObjectPlugin;
-import org.junit.Before;
 import org.junit.Test;
+import search.models.Document;
+import search.models.ImmutableDocument;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -12,6 +14,7 @@ import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class DocumentSearchTest {
@@ -20,11 +23,19 @@ public class DocumentSearchTest {
             .retryOn(NumberFormatException.class)
             .withDelay(1, TimeUnit.MILLISECONDS)
             .withMaxRetries(1);
+    private static ObjectMapper objectMapper = new ObjectMapper();
+
+    @Test
+    public void serializationTest() throws Exception {
+        Document document = ImmutableDocument.builder().fileName("one.txt").content("one").build();
+        assertEquals("{\"fileName\":\"one.txt\",\"content\":\"one\"}", objectMapper.writeValueAsString(document));
+        assertEquals(document, objectMapper.readValue("{\"fileName\":\"one.txt\",\"content\":\"one\"}", Document.class));
+    }
 
     @Test
     public void searchWithBadDirectory() {
         InputStream is = new ByteArrayInputStream("the\n1".getBytes(StandardCharsets.UTF_8));
-        DocumentSearch documentSearch = DocumentSearch.builder()
+        DocumentSearch documentSearch = ImmutableDocumentSearch.builder()
                 .retryPolicy(retryPolicy)
                 .elasticURL(elasticURL)
                 .directory("vogon_poetry")
@@ -37,7 +48,7 @@ public class DocumentSearchTest {
     @Test
     public void searchWithNoInput() {
         InputStream is = new ByteArrayInputStream("\n\n1".getBytes(StandardCharsets.UTF_8));
-        DocumentSearch documentSearch = DocumentSearch.builder()
+        DocumentSearch documentSearch = ImmutableDocumentSearch.builder()
                 .retryPolicy(retryPolicy)
                 .elasticURL(elasticURL)
                 .directory(Resources.getResource("sample_files").getPath())
@@ -50,7 +61,7 @@ public class DocumentSearchTest {
     @Test
     public void searchWithNoMethod() {
         InputStream is = new ByteArrayInputStream("the\na".getBytes(StandardCharsets.UTF_8));
-        DocumentSearch documentSearch = DocumentSearch.builder()
+        DocumentSearch documentSearch = ImmutableDocumentSearch.builder()
                 .retryPolicy(retryPolicy)
                 .elasticURL(elasticURL)
                 .directory(Resources.getResource("sample_files").getPath())

@@ -1,32 +1,34 @@
+package search;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 import io.vavr.collection.List;
 import io.vavr.control.Try;
-import lombok.Builder;
-import models.Arguments;
-import models.Method;
-import models.SearchResult;
-import models.elasticResponse.AggResponse;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
 import org.apache.http.client.fluent.Request;
 import org.apache.http.entity.ContentType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.immutables.value.Value;
+import search.models.Arguments;
+import search.models.*;
+import search.models.elasticResponse.AggResponse;
+import search.models.elasticResponse.Bucket;
 
 import java.io.*;
 import java.util.Iterator;
 
-@Builder
-class DocumentSearch {
+@Value.Immutable
+public abstract class DocumentSearch {
     private static final Logger logger = LogManager.getLogger(DocumentSearch.class);
-    private RetryPolicy retryPolicy;
-    private String directory;
-    private String elasticURL;
-    @Builder.Default private final ObjectMapper mapper = new ObjectMapper();
-    private InputStream in;
-    private PrintStream out;
+    private final ObjectMapper mapper = new ObjectMapper();
+    public abstract RetryPolicy retryPolicy();
+    public abstract String directory();
+    public abstract InputStream in();
+    public abstract PrintStream out();
+    public abstract String elasticURL();
 
     static Arguments getSearchMethod(InputStream in, PrintStream out, RetryPolicy retryPolicy) {
         String input = "";
@@ -52,33 +54,37 @@ class DocumentSearch {
             logger.error("Error occurred while formatting number.  Setting Method to String Match", ne);
             method = Method.StringMatch;
         }
-        return Arguments.builder().input(input).method(method).build();
+        return ImmutableArguments.builder().input(input).method(method).build();
     }
 
     List<SearchResult> searchTokens(List<File> files, Arguments arguments) {
         String elasticSearchString = String.format(
                 "{\n\"query\":{\n\"term\":{\"content\":\"%s\"}\n},\n\"aggs\":{" +
-                        "\n\"files\":{\n\"terms\":{\"field\":\"fileName\"}\n}\n}\n}", arguments.getInput());
+                        "\n\"files\":{\n\"terms\":{\"field\":\"fileName\"}\n}\n}\n}", arguments.input());
         List<SearchResult> result;
-        switch (arguments.getMethod()) {
+        switch (arguments.method()) {
             case StringMatch:
-                result = files.map(x -> Tokenizer.builder().file(x).build())
-                        .map(x -> new SearchResult(x.getAbsoluteFilePath(), x.stringMatch(arguments.getInput()).size()));
+                result = files.map(x -> ImmutableTokenizer.builder().file(x).build())
+                        .map(x -> ImmutableSearchResult.builder()
+                                .fileName(x.getAbsoluteFilePath())
+                                .occurrences(x.stringMatch(arguments.input()).size()).build());
                 break;
             case RegexMatch:
-                result = files.map(x -> Tokenizer.builder().file(x).build())
-                        .map(x -> new SearchResult(x.getAbsoluteFilePath(), x.regexMatch(arguments.getInput()).size()));
+                result = files.map(x -> ImmutableTokenizer.builder().file(x).build())
+                        .map(x -> ImmutableSearchResult.builder()
+                                .fileName(x.getAbsoluteFilePath())
+                                .occurrences(x.regexMatch(arguments.input()).size()).build());
                 break;
             case Indexed:
-                String elasticResponse = Try.of(() -> Request.Post(String.format("%s/_search?size=0", elasticURL))
+                String elasticResponse = Try.of(() -> Request.Post(String.format("%s/_search?size=0", elasticURL()))
                         .bodyString(elasticSearchString, ContentType.APPLICATION_JSON)
                         .execute().returnContent().toString()).getOrElse("{}");
                 result = Try.of(() -> List.ofAll(mapper.readValue(elasticResponse, AggResponse.class)
-                        .getAggregations()
-                        .getFiles()
-                        .getBuckets())
-                        .map(x -> new SearchResult(x.getKey(), x.getDoc_count())))
-                        .getOrElse(List.empty());
+                        .aggregations()
+                        .files()
+                        .buckets())
+                        .<SearchResult>map((Bucket x) -> ImmutableSearchResult.builder().fileName(x.key()).occurrences(x.doc_count()).build()))
+                        .getOrElse(List::empty);
                 break;
             default:
                 result = List.empty();
@@ -88,7 +94,7 @@ class DocumentSearch {
 
     String search() {
         Iterator<File> fileIterator = Files.fileTraverser()
-                .breadthFirst(new File(directory))
+                .breadthFirst(new File(this.directory()))
                 .iterator();
 
         // There is a potential to exhaust all open file handles on a system here
@@ -98,26 +104,26 @@ class DocumentSearch {
                 .filter(File::isFile)
                 .filter(x -> x.getName().endsWith(".txt"));
 
-        if (!ElasticUtils.indexExists(elasticURL)) {
-            ElasticUtils.createIndex(elasticURL);
-            ElasticUtils.insertIntoElasticSearch(files, retryPolicy, elasticURL);
+        if (!ElasticUtils.indexExists(elasticURL())) {
+            ElasticUtils.createIndex(elasticURL());
+            ElasticUtils.insertIntoElasticSearch(files, retryPolicy(), elasticURL());
         }
 
         if (!files.isEmpty()) {
-            Arguments arguments = getSearchMethod(in, out, retryPolicy);
-            if (arguments.getInput().isEmpty()) {
+            Arguments arguments = getSearchMethod(in(), out(), retryPolicy());
+            if (arguments.input().isEmpty()) {
                 return "Please provide a non empty string for the search term";
             } else {
                 Long startTime = System.currentTimeMillis();
                 return searchTokens(files, arguments)
-                        .sortBy(SearchResult::getOccurrences)
+                        .sortBy(SearchResult::occurrences)
                         .reverse()
-                        .map(x -> String.format("%s - %s matches", x.getFileName(), x.getOccurrences()))
+                        .map(x -> String.format("%s - %s matches", x.fileName(), x.occurrences()))
                         .mkString("\n")
                         .concat(String.format("\nElasped time: %s ms", System.currentTimeMillis() - startTime));
             }
         } else {
-            return String.format("There are no text files in the directory %s or the directory does not exist", directory);
+            return String.format("There are no text files in the directory %s or the directory does not exist", this.directory());
         }
     }
 }
